@@ -1,0 +1,17 @@
+{
+  "name": "Macros",
+  "short_name": "Macros",
+  "description": "Calorie and protein counter with barcode and photo scanning.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0f100d",
+  "theme_color": "#0f100d",
+  "categories": ["health", "food"],
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
