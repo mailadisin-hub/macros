@@ -518,8 +518,8 @@ function openAdd(meal) {
 
   bindMealSeg(m => { ctx.meal = m; });
   $('#t-scan').onclick = openScanner;
-  $('#t-meal').onclick = () => pickPhoto(file => runMealPhoto(file));
-  $('#t-label').onclick = () => pickPhoto(file => runLabelPhoto(file, {}));
+  $('#t-meal').onclick = () => pickPhoto(file => runMealPhoto(file), 'Photo of meal');
+  $('#t-label').onclick = () => pickPhoto(file => runLabelPhoto(file, {}), 'Photo of label');
   $('#t-quick').onclick = () => openQuick();
   $('#t-custom').onclick = () => openCustomFood(null, {});
   $$('#fav-list [data-food]').forEach(b => b.onclick = () => openPortion(store.foods[b.dataset.food]));
@@ -839,7 +839,7 @@ async function handleBarcode(code) {
       ${error ? `<button class="btn ghost" id="nf-retry">Try again</button>` : ''}
       <p class="faint" style="font-size:12.5px;text-align:center">Either way it is saved, so the next scan of this barcode is instant.</p>
     </div>`);
-  $('#nf-label').onclick = () => pickPhoto(file => runLabelPhoto(file, { barcode: code, name: food?.name, brand: food?.brand, servingG: food?.servingG }));
+  $('#nf-label').onclick = () => pickPhoto(file => runLabelPhoto(file, { barcode: code, name: food?.name, brand: food?.brand, servingG: food?.servingG }), 'Photo of label');
   $('#nf-manual').onclick = () => openCustomFood(null, { barcode: code, prefill: { name: food?.name, brand: food?.brand, servingG: food?.servingG } });
   if (error) $('#nf-retry').onclick = () => handleBarcode(code);
 }
@@ -850,10 +850,13 @@ async function handleBarcode(code) {
 
 const photoInput = $('#photo-input');
 let photoCb = null;
-function pickPhoto(cb) {
-  if (!store.ai.key && !(store.ai.provider === 'custom' && store.ai.baseUrl)) { aiMissing(); return; }
+
+/** Open a file chooser. capture=true asks Android for the camera app directly. */
+function chooseFile(cb, capture) {
   photoCb = cb;
   photoInput.value = '';
+  if (capture) photoInput.setAttribute('capture', 'environment');
+  else photoInput.removeAttribute('capture');
   photoInput.click();
 }
 photoInput.addEventListener('change', () => {
@@ -862,6 +865,64 @@ photoInput.addEventListener('change', () => {
   photoCb = null;
   if (f && cb) cb(f);
 });
+
+/** In-app camera: live viewfinder + shutter, with gallery as a side option. */
+async function pickPhoto(cb, title = 'Take a photo') {
+  if (!store.ai.key && !(store.ai.provider === 'custom' && store.ai.baseUrl)) { aiMissing(); return; }
+  let stream = null;
+  const stop = () => { stream?.getTracks().forEach(t => t.stop()); stream = null; };
+  const gen = openSheet(`
+    <div class="sheet-head"><div><h2>${esc(title)}</h2><p class="faint" id="cam-msg">Starting camera…</p></div></div>
+    <div class="stack">
+      <div class="scan-box cam-box"><video id="cam-video" playsinline muted autoplay></video></div>
+      <button class="shutter" id="cam-shoot" aria-label="Take photo" disabled></button>
+      <div class="grid2">
+        <button class="btn ghost" id="cam-gallery">From gallery</button>
+        <button class="btn ghost" id="cam-native">Phone camera</button>
+      </div>
+    </div>`, { onClose: stop });
+
+  const msg = t => { const el = $('#cam-msg'); if (el && live(gen)) el.textContent = t; };
+  $('#cam-gallery').onclick = () => { stop(); chooseFile(cb, false); };
+  $('#cam-native').onclick = () => { stop(); chooseFile(cb, true); };
+
+  if (!navigator.mediaDevices?.getUserMedia) {
+    msg('Live camera not available here — use the buttons below.');
+    $('.cam-box').hidden = true; $('#cam-shoot').hidden = true;
+    return;
+  }
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1440 } }, audio: false,
+    });
+  } catch (e) {
+    if (!live(gen)) return;
+    msg(e.name === 'NotAllowedError' ? 'Camera permission denied — allow it in site settings, or use the buttons below.'
+      : 'Could not start the camera — use the buttons below.');
+    $('.cam-box').hidden = true; $('#cam-shoot').hidden = true;
+    return;
+  }
+  if (!live(gen)) { stop(); return; }
+  const video = $('#cam-video');
+  video.srcObject = stream;
+  try { await video.play(); } catch { /* autoplay attr covers it */ }
+  msg('Get the whole plate in frame, from a little above');
+  const shoot = $('#cam-shoot');
+  shoot.disabled = false;
+  shoot.onclick = () => {
+    const w = video.videoWidth, h = video.videoHeight;
+    if (!w || !h) { msg('Camera not ready yet — try again'); return; }
+    const c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    c.getContext('2d').drawImage(video, 0, 0, w, h);
+    stop();
+    navigator.vibrate?.(30);
+    c.toBlob(blob => {
+      if (!blob) { toast('Could not capture the photo'); return; }
+      cb(new File([blob], 'photo.jpg', { type: 'image/jpeg' }));
+    }, 'image/jpeg', 0.9);
+  };
+}
 
 function aiMissing() {
   openSheet(`

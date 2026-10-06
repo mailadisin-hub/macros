@@ -182,6 +182,12 @@ details[open]{padding-bottom:12px}
 .scan-box .laser{position:absolute;left:14%;right:14%;top:50%;height:2px;background:var(--bad);opacity:.8;animation:las 1.6s ease-in-out infinite alternate}
 @keyframes las{from{transform:translateY(-34px)}to{transform:translateY(34px)}}
 
+.cam-box{aspect-ratio:3/4;max-height:56dvh;margin:0 auto;width:100%}
+.shutter{display:block;margin:4px auto;width:74px;height:74px;border-radius:50%;background:var(--text);
+  border:5px solid var(--surface);box-shadow:0 0 0 3px var(--text)}
+.shutter:active{transform:scale(.93)}
+.shutter:disabled{opacity:.3}
+
 /* history */
 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;text-align:center}
 .stats>div{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 6px}

@@ -78,6 +78,8 @@ function reset() {
   routes = []; calls.length = 0;
 }
 async function pickFile() {
+  // no camera in jsdom: the camera sheet offers gallery, which uses the file input
+  if ($('#cam-gallery')) await click('#cam-gallery');
   const inp = $('#photo-input');
   Object.defineProperty(inp, 'files', { configurable: true, value: [{ name: 'p.jpg', type: 'image/jpeg' }] });
   inp.dispatchEvent(new w.Event('change'));
@@ -538,4 +540,41 @@ test('Settings: key hint flags short or wrongly copied OpenRouter keys', async (
   assert.match($('#key-hint').textContent, /too short/);
   await type('#ai-key', 'sk-or-v1-' + 'a'.repeat(64));
   assert.match($('#key-hint').textContent, /73 characters$/);
+});
+
+test('in-app camera: live viewfinder, shutter captures a photo into the meal flow', async () => {
+  reset();
+  store.ai.key = 'k';
+  let stopped = 0, sent;
+  const track = { stop: () => { stopped++; } };
+  navigator.mediaDevices = { getUserMedia: async () => ({ getTracks: () => [track] }) };
+  w.HTMLMediaElement.prototype.play = async function () {};
+  Object.defineProperty(w.HTMLVideoElement.prototype, 'videoWidth', { configurable: true, get: () => 1920 });
+  Object.defineProperty(w.HTMLVideoElement.prototype, 'videoHeight', { configurable: true, get: () => 1440 });
+  w.HTMLCanvasElement.prototype.toBlob = function (cb) { cb(new w.Blob(['x'], { type: 'image/jpeg' })); };
+  routes.push(['/chat/completions', (u, o) => { sent = JSON.parse(o.body); return aiReply({ items: [{ name: 'Toast', grams: 40, kcal: 100, protein: 3, carbs: 18, fat: 1 }] }); }]);
+  await click('[data-view="today"]');
+  await click('#fab'); await click('#t-meal'); await tick(20);
+  assert.match(sheetText(), /Photo of meal/);
+  assert.match(sheetText(), /whole plate/);
+  assert.ok(!$('#cam-shoot').disabled);
+  await click('#cam-shoot'); await tick(40);
+  assert.ok(stopped >= 1, 'camera released after shot');
+  assert.ok(sent, 'photo sent to AI');
+  assert.equal($('[data-name="0"]').value, 'Toast');
+  await closeSheet();
+  // closing the camera sheet releases the camera
+  stopped = 0;
+  await click('#fab'); await click('#t-label'); await tick(20);
+  assert.match(sheetText(), /Photo of label/);
+  await closeSheet();
+  assert.ok(stopped >= 1);
+  // permission denied falls back to buttons
+  navigator.mediaDevices = { getUserMedia: async () => { const e = new Error('no'); e.name = 'NotAllowedError'; throw e; } };
+  await click('#fab'); await click('#t-meal'); await tick(20);
+  assert.match(sheetText(), /permission denied/);
+  assert.ok($('#cam-shoot').hidden);
+  assert.ok($('#cam-gallery') && $('#cam-native'));
+  await closeSheet();
+  delete navigator.mediaDevices;
 });
