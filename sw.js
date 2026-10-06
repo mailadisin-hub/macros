@@ -2,7 +2,7 @@
    Shell files: network-first so updates land on the next open.
    Cross-origin (Open Food Facts, AI): never intercepted. */
 
-const CACHE = 'macros-v4';
+const CACHE = 'macros-v5';
 const SHELL = ['./', 'index.html', 'app.js', 'store.js', 'food.js', 'manifest.json', 'icon-192.png', 'icon-512.png'];
 
 self.addEventListener('install', e => {
@@ -20,8 +20,13 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
   if (url.origin !== self.location.origin || e.request.method !== 'GET') return;
+  // no-cache = revalidate with GitHub Pages (cheap 304) instead of trusting its 10-minute cache,
+  // so an update never mixes old and new modules. Navigations can't take a RequestInit.
+  const fresh = e.request.mode === 'navigate'
+    ? fetch(e.request.url, { cache: 'no-cache' })
+    : fetch(e.request, { cache: 'no-cache' });
   e.respondWith(
-    fetch(e.request)
+    fresh
       .then(res => {
         if (res.ok) {
           const copy = res.clone();
