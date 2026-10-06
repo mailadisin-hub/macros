@@ -83,3 +83,10 @@ test('openrouter preset uses its own URL and model, ignoring any typed base URL'
   });
   assert.equal(await F.testAI({ provider: 'openrouter', key: 'sk-or-x', model: '', baseUrl: 'https://wrong.example' }), true);
 });
+
+test('errors show what the server actually said', async () => {
+  mockFetch(401, { error: { message: 'User not found.', code: 401 } });
+  await assert.rejects(F.testAI(ai), /key rejected.*User not found/);
+  mockFetch(402, { error: { message: 'Insufficient credits' } });
+  await assert.rejects(F.testAI(ai), /No credit.*Insufficient credits/);
+});

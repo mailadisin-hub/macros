@@ -361,6 +361,7 @@ function renderSettings() {
           <select class="input" id="ai-prov">${Object.entries(PROVIDERS).map(([k, v]) => `<option value="${k}" ${k === prov ? 'selected' : ''}>${esc(v.label)}</option>`).join('')}</select></label>
         <label class="field"><span>API key</span>
           <input class="input" id="ai-key" type="password" autocomplete="off" spellcheck="false" placeholder="Paste your key" value="${esc(ai.key)}"></label>
+        <p class="faint" style="font-size:12.5px;margin-top:-4px" id="key-hint"></p>
         <label class="field" id="ai-url-row" ${prov !== 'custom' ? 'hidden' : ''}><span>Base URL (ends before /chat/completions)</span>
           <input class="input" id="ai-url" autocomplete="off" spellcheck="false" placeholder="https://…/v1" value="${esc(ai.baseUrl)}"></label>
         <label class="field"><span>Model</span>
@@ -415,6 +416,19 @@ function renderSettings() {
     $('#ai-model').placeholder = PROVIDERS[store.ai.provider].model;
   };
   ['#ai-key', '#ai-url', '#ai-model'].forEach(s => $(s).onchange = () => { saveAI(); toast('Saved'); });
+  const keyHint = () => {
+    const raw = $('#ai-key').value, k = raw.trim(), el = $('#key-hint');
+    if (!k) { el.textContent = ''; return; }
+    const warn = [];
+    if (/\s/.test(k)) warn.push('it has a space or line break inside — re-copy it');
+    if ($('#ai-prov').value === 'openrouter' && !k.startsWith('sk-or-')) warn.push('OpenRouter keys start with sk-or-');
+    if ($('#ai-prov').value === 'openrouter' && k.length < 60) warn.push('looks too short — OpenRouter keys are about 73 characters');
+    el.innerHTML = `Key: <b>${esc(k.slice(0, 9))}…${esc(k.slice(-4))}</b> · ${k.length} characters`
+      + (warn.length ? `<br><span style="color:var(--kcal)">${esc(warn.join('; '))}</span>` : '');
+  };
+  keyHint();
+  $('#ai-key').addEventListener('input', keyHint);
+  $('#ai-prov').addEventListener('change', keyHint);
   $('#ai-test').onclick = async () => {
     saveAI();
     const out = $('#ai-result');

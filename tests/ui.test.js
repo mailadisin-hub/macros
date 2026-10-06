@@ -529,3 +529,13 @@ test('Settings: OpenRouter hides base URL and shows its model hint', async () =>
   sel.value = 'custom'; sel.dispatchEvent(new w.Event('change'));
   assert.ok(!$('#ai-url-row').hidden);
 });
+
+test('Settings: key hint flags short or wrongly copied OpenRouter keys', async () => {
+  await click('[data-view="settings"]');
+  const sel = $('#ai-prov'); sel.value = 'openrouter'; sel.dispatchEvent(new w.Event('change'));
+  await type('#ai-key', 'sk-or-v1-abc def');
+  assert.match($('#key-hint').textContent, /space or line break/);
+  assert.match($('#key-hint').textContent, /too short/);
+  await type('#ai-key', 'sk-or-v1-' + 'a'.repeat(64));
+  assert.match($('#key-hint').textContent, /73 characters$/);
+});

@@ -149,11 +149,14 @@ function aiConfig(ai) {
 
 function errorText(j, status) {
   const e = Array.isArray(j) ? j[0]?.error : j?.error;
-  const msg = (typeof e === 'string' ? e : e?.message) || '';
-  if (status === 401 || status === 403 || /api key/i.test(msg)) return 'AI key rejected — check it in Settings';
-  if (status === 429) return 'AI rate limit hit — wait a minute and try again';
-  if (status === 404 || /model/i.test(msg)) return `AI model problem: ${msg || 'model not found'} — check the model name in Settings`;
-  return `AI error ${status}${msg ? ': ' + msg : ''}`;
+  const msg = ((typeof e === 'string' ? e : e?.message) || '').slice(0, 200);
+  const said = msg ? ` (server said: “${msg}”)` : '';
+  if (status === 402) return `No credit left on the AI account — add credit, then try again${said}`;
+  if (status === 401 || /api key/i.test(msg)) return `AI key rejected — check it was copied in full${said}`;
+  if (status === 403) return `AI request refused${said}`;
+  if (status === 429) return `AI rate limit hit — wait a minute and try again${said}`;
+  if (status === 404 || /model/i.test(msg)) return `AI model problem — check the model name in Settings${said}`;
+  return `AI error ${status}${said}`;
 }
 
 /** One chat call. content is a string or an OpenAI content array. Returns the reply text. */
