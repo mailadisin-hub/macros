@@ -10,6 +10,7 @@ const OFF_FIELDS = 'code,product_name,product_name_en,brands,nutriments,serving_
 
 export const PROVIDERS = {
   gemini: { label: 'Google Gemini', baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai', model: 'gemini-3.8-flash' },
+  openrouter: { label: 'OpenRouter', baseUrl: 'https://openrouter.ai/api/v1', model: 'google/gemini-3.8-flash' },
   custom: { label: 'Other (OpenAI-compatible, e.g. MiMo)', baseUrl: '', model: 'mimo-v2.6-flash' },
 };
 
@@ -139,7 +140,7 @@ export function parseJSON(text) {
 
 function aiConfig(ai) {
   const prov = PROVIDERS[ai.provider] || PROVIDERS.gemini;
-  const baseUrl = (ai.provider === 'gemini' ? prov.baseUrl : ai.baseUrl || '').replace(/\/+$/, '');
+  const baseUrl = (prov.baseUrl || ai.baseUrl || '').replace(/\/+$/, '');
   const model = (ai.model || prov.model).trim();
   if (!ai.key) throw new Error('No AI key yet — add it in Settings');
   if (!baseUrl) throw new Error('No base URL set — add it in Settings');

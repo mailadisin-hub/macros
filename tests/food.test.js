@@ -75,3 +75,11 @@ test('lookupBarcode against live Open Food Facts', async () => {
   assert.equal(f.per100.kcal, 481);
   assert.equal(await F.lookupBarcode('0000000000017'), null);
 });
+
+test('openrouter preset uses its own URL and model, ignoring any typed base URL', async () => {
+  mockFetch(200, reply('{"ok":true}'), (url, opts) => {
+    assert.equal(url, 'https://openrouter.ai/api/v1/chat/completions');
+    assert.equal(JSON.parse(opts.body).model, 'google/gemini-3.8-flash');
+  });
+  assert.equal(await F.testAI({ provider: 'openrouter', key: 'sk-or-x', model: '', baseUrl: 'https://wrong.example' }), true);
+});

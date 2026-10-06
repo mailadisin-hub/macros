@@ -520,3 +520,12 @@ test('Install button appears when Chrome offers install, and triggers the prompt
   await tick(5);
   assert.ok(!$('#install'));
 });
+
+test('Settings: OpenRouter hides base URL and shows its model hint', async () => {
+  await click('[data-view="settings"]');
+  const sel = $('#ai-prov'); sel.value = 'openrouter'; sel.dispatchEvent(new w.Event('change'));
+  assert.ok($('#ai-url-row').hidden);
+  assert.equal($('#ai-model').placeholder, 'google/gemini-3.8-flash');
+  sel.value = 'custom'; sel.dispatchEvent(new w.Event('change'));
+  assert.ok(!$('#ai-url-row').hidden);
+});

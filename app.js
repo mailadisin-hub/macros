@@ -361,13 +361,13 @@ function renderSettings() {
           <select class="input" id="ai-prov">${Object.entries(PROVIDERS).map(([k, v]) => `<option value="${k}" ${k === prov ? 'selected' : ''}>${esc(v.label)}</option>`).join('')}</select></label>
         <label class="field"><span>API key</span>
           <input class="input" id="ai-key" type="password" autocomplete="off" spellcheck="false" placeholder="Paste your key" value="${esc(ai.key)}"></label>
-        <label class="field" id="ai-url-row" ${prov === 'gemini' ? 'hidden' : ''}><span>Base URL (ends before /chat/completions)</span>
+        <label class="field" id="ai-url-row" ${prov !== 'custom' ? 'hidden' : ''}><span>Base URL (ends before /chat/completions)</span>
           <input class="input" id="ai-url" autocomplete="off" spellcheck="false" placeholder="https://…/v1" value="${esc(ai.baseUrl)}"></label>
         <label class="field"><span>Model</span>
           <input class="input" id="ai-model" autocomplete="off" spellcheck="false" placeholder="${esc(PROVIDERS[prov].model)}" value="${esc(ai.model === 'gemini-flash-latest' ? '' : ai.model)}"></label>
         <button class="btn ghost" id="ai-test">Test connection</button>
         <div id="ai-result"></div>
-        <p class="faint" style="font-size:12.5px">The key stays on this phone only. It is never included in backups. Free Gemini keys: aistudio.google.com → Get API key.</p>
+        <p class="faint" style="font-size:12.5px">The key stays on this phone only. It is never included in backups. OpenRouter keys: openrouter.ai → Keys. Each photo costs well under 1p.</p>
       </section>
 
       <section class="card stack">
@@ -411,7 +411,7 @@ function renderSettings() {
   };
   $('#ai-prov').onchange = () => {
     saveAI();
-    $('#ai-url-row').hidden = store.ai.provider === 'gemini';
+    $('#ai-url-row').hidden = store.ai.provider !== 'custom';
     $('#ai-model').placeholder = PROVIDERS[store.ai.provider].model;
   };
   ['#ai-key', '#ai-url', '#ai-model'].forEach(s => $(s).onchange = () => { saveAI(); toast('Saved'); });
