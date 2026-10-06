@@ -2,7 +2,7 @@
    Shell files: network-first so updates land on the next open.
    Cross-origin (Open Food Facts, AI): never intercepted. */
 
-const CACHE = 'macros-v2';
+const CACHE = 'macros-v3';
 const SHELL = ['./', 'index.html', 'app.js', 'store.js', 'food.js', 'manifest.json', 'icon-192.png', 'icon-512.png'];
 
 self.addEventListener('install', e => {

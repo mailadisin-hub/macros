@@ -898,7 +898,7 @@ function reviewMeal(res, img) {
     <img class="thumb" src="${img}" alt="" style="max-height:150px">
     <div class="sheet-head" style="margin-top:12px"><div><h2>Check the estimate</h2><p class="faint">Fix the grams — portion size is where AI goes wrong most.</p></div></div>
     <div class="stack">
-      <div class="list">${items.map((it, i) => `
+      <div class="list"><div class="ai-item faint" style="padding:8px 12px;font-size:12px"><span></span><span>Food</span><span style="text-align:right">grams</span></div>${items.map((it, i) => `
         <div class="ai-item">
           <input type="checkbox" data-on="${i}" checked aria-label="Include">
           <input class="input" data-name="${i}" value="${esc(it.name)}" aria-label="Name">
