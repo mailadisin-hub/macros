@@ -343,6 +343,7 @@ function renderSettings() {
         <h3>Install</h3>
         ${installPrompt ? `<button class="btn" id="install">Install app</button>`
           : `<p class="muted" style="font-size:13.5px">Chrome menu ⋮ → <b>Add to home screen</b> → <b>Install</b>. If it isn't offered yet, tap around the app for 30 seconds and this turns into an Install button.</p>`}
+        <p class="faint" style="font-size:12px" id="install-diag">Checking…</p>
       </section>`}
       <section class="card stack">
         <h3>Daily targets</h3>
@@ -382,6 +383,24 @@ function renderSettings() {
         <p class="faint" style="font-size:12.5px" id="persist-note"></p>
       </section>
     </div>`;
+
+  (async () => {
+    const el = $('#install-diag');
+    if (!el) return;
+    const parts = [];
+    parts.push(installPrompt ? 'Chrome: install offered ✓' : 'Chrome: install not offered yet');
+    try {
+      const reg = await navigator.serviceWorker?.getRegistration();
+      parts.push(reg?.active ? 'offline worker ✓' : 'offline worker missing');
+    } catch { parts.push('offline worker error'); }
+    parts.push(navigator.serviceWorker?.controller ? 'page controlled ✓' : 'page not controlled (reload once)');
+    try {
+      const m = await (await fetch('manifest.json', { cache: 'no-store' })).json();
+      parts.push(m.icons?.length >= 2 ? 'manifest ✓' : 'manifest incomplete');
+    } catch { parts.push('manifest failed to load'); }
+    if (/; wv\)/.test(navigator.userAgent)) parts.push('⚠ opened inside another app — open in Chrome itself');
+    el.textContent = parts.join(' · ');
+  })();
 
   $('#install')?.addEventListener('click', async () => {
     const p = installPrompt;
