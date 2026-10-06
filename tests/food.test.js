@@ -110,3 +110,12 @@ test('reasoning_effort only for presets; length cut-off gives a clear error', as
   mockFetch(200, { choices: [{ message: { content: null }, finish_reason: 'length' }] });
   await assert.rejects(F.testAI(ai), /ran out of room/);
 });
+
+test('local server: no key needed, no auth header sent', async () => {
+  mockFetch(200, reply('{"ok":true}'), (url, opts) => {
+    assert.equal(url, 'https://ufo-2.tail.ts.net/v1/chat/completions');
+    assert.equal(opts.headers.Authorization, undefined);
+    assert.equal(JSON.parse(opts.body).model, 'local');
+  });
+  assert.equal(await F.testAI({ provider: 'custom', key: '', model: '', baseUrl: 'https://ufo-2.tail.ts.net/v1' }), true);
+});

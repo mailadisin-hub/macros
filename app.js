@@ -851,7 +851,7 @@ async function handleBarcode(code) {
 const photoInput = $('#photo-input');
 let photoCb = null;
 function pickPhoto(cb) {
-  if (!store.ai.key) { aiMissing(); return; }
+  if (!store.ai.key && !(store.ai.provider === 'custom' && store.ai.baseUrl)) { aiMissing(); return; }
   photoCb = cb;
   photoInput.value = '';
   photoInput.click();

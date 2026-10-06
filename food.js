@@ -141,8 +141,9 @@ export function parseJSON(text) {
 function aiConfig(ai) {
   const prov = PROVIDERS[ai.provider] || PROVIDERS.gemini;
   const baseUrl = (prov.baseUrl || ai.baseUrl || '').replace(/\/+$/, '');
-  const model = (ai.model || prov.model).trim();
-  if (!ai.key) throw new Error('No AI key yet — add it in Settings');
+  const model = (ai.model || (ai.provider === 'custom' && !ai.key ? 'local' : prov.model)).trim();
+  // a local server (custom provider) usually needs no key
+  if (!ai.key && ai.provider !== 'custom') throw new Error('No AI key yet — add it in Settings');
   if (!baseUrl) throw new Error('No base URL set — add it in Settings');
   return { baseUrl, model, key: ai.key.trim(), preset: !!prov.baseUrl };
 }
@@ -164,7 +165,7 @@ export async function chat(ai, content, ms = 60000, maxTokens = 3000) {
   const cfg = aiConfig(ai);
   const res = await fetchT(`${cfg.baseUrl}/chat/completions`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${cfg.key}` },
+    headers: { 'Content-Type': 'application/json', ...(cfg.key ? { Authorization: `Bearer ${cfg.key}` } : {}) },
     // max_tokens matters: without it OpenRouter reserves the model's full output limit against your credit
     body: JSON.stringify({
       model: cfg.model, messages: [{ role: 'user', content }], temperature: 0.2, max_tokens: maxTokens,
