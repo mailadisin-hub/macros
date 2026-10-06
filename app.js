@@ -339,6 +339,11 @@ function renderSettings() {
   main.innerHTML = `
     <header class="day-nav"><h1>Settings</h1></header>
     <div class="stack">
+      ${isInstalled() ? '' : `<section class="card stack">
+        <h3>Install</h3>
+        ${installPrompt ? `<button class="btn" id="install">Install app</button>`
+          : `<p class="muted" style="font-size:13.5px">Chrome menu ⋮ → <b>Add to home screen</b> → <b>Install</b>. If it isn't offered yet, tap around the app for 30 seconds and this turns into an Install button.</p>`}
+      </section>`}
       <section class="card stack">
         <h3>Daily targets</h3>
         <div class="grid2">
@@ -376,6 +381,15 @@ function renderSettings() {
         <p class="faint" style="font-size:12.5px" id="persist-note"></p>
       </section>
     </div>`;
+
+  $('#install')?.addEventListener('click', async () => {
+    const p = installPrompt;
+    if (!p) return;
+    installPrompt = null;
+    p.prompt();
+    try { await p.userChoice; } catch { /* dismissed */ }
+    render();
+  });
 
   const check = () => {
     const kc = num(T.p) * 4 + num(T.c) * 4 + num(T.f) * 9;
@@ -989,6 +1003,20 @@ document.addEventListener('visibilitychange', () => {
     if (!sheetOpen) render();
   }
 });
+
+// Chrome's install prompt: keep it so Settings can offer an Install button
+let installPrompt = null;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  installPrompt = e;
+  if (state.view === 'settings' && !sheetOpen) render();
+});
+window.addEventListener('appinstalled', () => {
+  installPrompt = null;
+  toast('Installed — open it from your home screen');
+  if (state.view === 'settings') render();
+});
+const isInstalled = () => !!window.matchMedia?.('(display-mode: standalone)')?.matches || navigator.standalone === true;
 
 navigator.storage?.persist?.().catch(() => {});
 render();

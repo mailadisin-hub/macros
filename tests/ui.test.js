@@ -501,3 +501,22 @@ test('everything persisted to localStorage', async () => {
   assert.ok(saved.entries.length >= 1);
   assert.ok(saved.targets.kcal);
 });
+
+test('Install button appears when Chrome offers install, and triggers the prompt', async () => {
+  w.matchMedia = () => ({ matches: false });
+  await click('[data-view="settings"]');
+  assert.match(mainText(), /Add to home screen/);
+  assert.ok(!$('#install'));
+  let prompted = false;
+  const ev = new w.Event('beforeinstallprompt', { cancelable: true });
+  ev.prompt = () => { prompted = true; };
+  ev.userChoice = Promise.resolve({ outcome: 'accepted' });
+  w.dispatchEvent(ev);
+  await tick(5);
+  assert.ok(ev.defaultPrevented);
+  await click('#install');
+  assert.ok(prompted);
+  w.dispatchEvent(new w.Event('appinstalled'));
+  await tick(5);
+  assert.ok(!$('#install'));
+});
