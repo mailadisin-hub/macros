@@ -90,3 +90,23 @@ test('errors show what the server actually said', async () => {
   mockFetch(402, { error: { message: 'Insufficient credits' } });
   await assert.rejects(F.testAI(ai), /No credit.*Insufficient credits/);
 });
+
+test('every AI call caps max_tokens so low-credit accounts still work', async () => {
+  const seen = [];
+  mockFetch(200, reply('{"ok":true}'), (url, opts) => seen.push(JSON.parse(opts.body).max_tokens));
+  await F.testAI(ai);
+  mockFetch(200, reply('{"items":[]}'), (url, opts) => seen.push(JSON.parse(opts.body).max_tokens));
+  await F.analyseMeal(ai, 'data:x');
+  assert.deepEqual(seen, [1500, 3000]);
+});
+
+test('reasoning_effort only for presets; length cut-off gives a clear error', async () => {
+  let body;
+  mockFetch(200, reply('{"ok":true}'), (u, o) => { body = JSON.parse(o.body); });
+  await F.testAI(ai);
+  assert.equal(body.reasoning_effort, 'low');
+  await F.testAI({ provider: 'custom', key: 'k', model: 'm', baseUrl: 'https://x.example/v1' });
+  assert.equal(body.reasoning_effort, undefined);
+  mockFetch(200, { choices: [{ message: { content: null }, finish_reason: 'length' }] });
+  await assert.rejects(F.testAI(ai), /ran out of room/);
+});

@@ -144,7 +144,7 @@ function aiConfig(ai) {
   const model = (ai.model || prov.model).trim();
   if (!ai.key) throw new Error('No AI key yet — add it in Settings');
   if (!baseUrl) throw new Error('No base URL set — add it in Settings');
-  return { baseUrl, model, key: ai.key.trim() };
+  return { baseUrl, model, key: ai.key.trim(), preset: !!prov.baseUrl };
 }
 
 function errorText(j, status) {
@@ -160,18 +160,26 @@ function errorText(j, status) {
 }
 
 /** One chat call. content is a string or an OpenAI content array. Returns the reply text. */
-export async function chat(ai, content, ms = 60000) {
+export async function chat(ai, content, ms = 60000, maxTokens = 3000) {
   const cfg = aiConfig(ai);
   const res = await fetchT(`${cfg.baseUrl}/chat/completions`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${cfg.key}` },
-    body: JSON.stringify({ model: cfg.model, messages: [{ role: 'user', content }], temperature: 0.2 }),
+    // max_tokens matters: without it OpenRouter reserves the model's full output limit against your credit
+    body: JSON.stringify({
+      model: cfg.model, messages: [{ role: 'user', content }], temperature: 0.2, max_tokens: maxTokens,
+      // Gemini thinks before answering; low effort is plenty here and stops thinking eating the token budget.
+      // Only sent to known providers, since unknown endpoints may reject the field.
+      ...(cfg.preset ? { reasoning_effort: 'low' } : {}),
+    }),
   }, ms);
   let j = null;
   try { j = await res.json(); } catch { /* non-JSON error body */ }
   if (!res.ok) throw new Error(errorText(j, res.status));
-  const text = j?.choices?.[0]?.message?.content;
-  if (Array.isArray(text)) return text.map(p => p.text || '').join('');
+  const choice = j?.choices?.[0];
+  let text = choice?.message?.content;
+  if (Array.isArray(text)) text = text.map(p => p.text || '').join('');
+  if (!text && choice?.finish_reason === 'length') throw new Error('AI ran out of room before answering — try again');
   return text;
 }
 
@@ -206,7 +214,7 @@ export async function analyseLabel(ai, dataUrl) {
 
 /** Cheap check that the key, URL and model all work. */
 export async function testAI(ai) {
-  const text = await chat(ai, 'Reply with exactly this JSON and nothing else: {"ok":true}', 30000);
+  const text = await chat(ai, 'Reply with exactly this JSON and nothing else: {"ok":true}', 30000, 1500);
   const j = parseJSON(text);
   if (j.ok !== true) throw new Error('Unexpected reply: ' + String(text).slice(0, 80));
   return true;
