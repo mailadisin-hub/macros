@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <queries>
+        <intent>
+            <action android:name="android.support.customtabs.action.CustomTabsService" />
+        </intent>
+    </queries>
+
+    <application
+        android:label="Macros"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher"
+        android:allowBackup="false"
+        android:theme="@android:style/Theme.DeviceDefault.NoActionBar">
+
+        <!-- Links this APK to the site so Chrome drops the address bar.
+             The matching file is https://mailadisin-hub.github.io/.well-known/assetlinks.json -->
+        <meta-data android:name="asset_statements" android:resource="@string/asset_statements" />
+
+        <activity
+            android:name="com.google.androidbrowserhelper.trusted.LauncherActivity"
+            android:exported="true"
+            android:screenOrientation="portrait">
+            <meta-data android:name="android.support.customtabs.trusted.DEFAULT_URL"
+                android:value="https://mailadisin-hub.github.io/macros/" />
+            <meta-data android:name="android.support.customtabs.trusted.STATUS_BAR_COLOR"
+                android:resource="@color/bg" />
+            <meta-data android:name="android.support.customtabs.trusted.NAVIGATION_BAR_COLOR"
+                android:resource="@color/bg" />
+            <meta-data android:name="android.support.customtabs.trusted.SCREEN_ORIENTATION"
+                android:value="portrait" />
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>
