@@ -2,8 +2,9 @@
    Shell files: network-first so updates land on the next open.
    Cross-origin (Open Food Facts, AI): never intercepted. */
 
-const CACHE = 'macros-v13';
-const SHELL = ['./', 'index.html', 'app.js', 'store.js', 'food.js', 'manifest.json', 'icon-192.png', 'icon-512.png'];
+const CACHE = 'macros-v15';
+const SHELL = ['./', 'index.html', 'app.js', 'store.js', 'food.js', 'manifest.json', 'icon-192.png', 'icon-512.png',
+  'vendor/barcode-detector.js', 'vendor/zxing_reader.wasm'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));

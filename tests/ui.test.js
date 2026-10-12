@@ -591,3 +591,15 @@ test('API key is saved the moment it is pasted, without leaving the field', asyn
   await click('[data-view="today"]'); await click('[data-view="settings"]');
   assert.equal($('#ai-key').value, 'sk-or-v1-pasted');
 });
+
+test('inside the Android app, export goes through the native bridge', async () => {
+  const saved = [];
+  w.MacrosAndroid = { saveFile: (n, m, t) => { saved.push([n, m, t]); return true; } };
+  await click('[data-view="settings"]');
+  await click('#export');
+  delete w.MacrosAndroid;
+  assert.equal(saved.length, 1);
+  assert.match(saved[0][0], /^macros-backup-\d{4}-\d{2}-\d{2}\.json$/);
+  assert.equal(saved[0][1], 'application/json');
+  assert.ok(JSON.parse(saved[0][2]).entries);
+});

@@ -468,10 +468,16 @@ function renderSettings() {
   const daysN = new Set(store.entries.map(e => e.date)).size;
   $('#data-stats').textContent = `${store.entries.length} entries across ${daysN} days · ${foodsN} saved foods. Stored on this phone only.`;
   $('#export').onclick = () => {
-    const blob = new Blob([JSON.stringify(exportData(), null, 1)], { type: 'application/json' });
+    const json = JSON.stringify(exportData(), null, 1);
+    const name = `macros-backup-${dayKey()}.json`;
+    if (window.MacrosAndroid?.saveFile) { // inside the Android app: WebView can't download blobs
+      window.MacrosAndroid.saveFile(name, 'application/json', json);
+      return;
+    }
+    const blob = new Blob([json], { type: 'application/json' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `macros-backup-${dayKey()}.json`;
+    a.download = name;
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -782,21 +788,17 @@ async function openScanner() {
     handleBarcode(code);
   };
 
-  if (!('BarcodeDetector' in window)) {
-    msg('This browser cannot scan barcodes — type the number below (Chrome on Android can scan).');
-    $('.scan-box').hidden = true;
-    return;
-  }
   let detector;
   try {
-    const supported = await BarcodeDetector.getSupportedFormats();
-    const want = ['ean_13', 'ean_8', 'upc_a', 'upc_e'].filter(f => supported.includes(f));
-    detector = new BarcodeDetector(want.length ? { formats: want } : undefined);
-  } catch {
-    msg('Barcode scanning is not available — type the number below.');
+    detector = await getBarcodeDetector();
+  } catch (e) {
+    console.warn('No barcode scanner', e);
+    if (!live(gen)) return;
+    msg('Barcode scanning is not available here — type the number below.');
     $('.scan-box').hidden = true;
     return;
   }
+  if (!live(gen)) return;
   try {
     stream = await navigator.mediaDevices.getUserMedia({
       video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false,
@@ -835,6 +837,27 @@ async function openScanner() {
     timer = setTimeout(tick, 150);
   };
   tick();
+}
+
+const FORMATS = ['ean_13', 'ean_8', 'upc_a', 'upc_e'];
+let detectorPromise = null;
+
+/** Chrome's built-in detector when it reads EAN, otherwise the bundled ZXing one (Android WebView, Firefox, iOS…). */
+function getBarcodeDetector() {
+  detectorPromise ??= (async () => {
+    if ('BarcodeDetector' in window) {
+      try {
+        const supported = await window.BarcodeDetector.getSupportedFormats();
+        const want = FORMATS.filter(f => supported.includes(f));
+        if (want.length) return new window.BarcodeDetector({ formats: want });
+      } catch { /* fall through to the bundled one */ }
+    }
+    const { BarcodeDetector, prepareZXingModule } = await import('./vendor/barcode-detector.js');
+    prepareZXingModule({ overrides: { locateFile: p => new URL(`vendor/${p}`, location.href).href } });
+    return new BarcodeDetector({ formats: FORMATS });
+  })();
+  detectorPromise.catch(() => { detectorPromise = null; }); // allow a retry after a failed load
+  return detectorPromise;
 }
 
 async function handleBarcode(code) {

@@ -1,1 +1,14 @@
-{"name":"macros","private":true,"type":"module","scripts":{"test":"node --test tests/*.test.js"},"devDependencies":{"jsdom":"^29.1.1"}}
+{
+  "name": "macros",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "vendor": "esbuild tools-barcode-entry.js --bundle --format=esm --platform=browser --minify --outfile=vendor/barcode-detector.js && node -e \"require('fs').copyFileSync('node_modules/zxing-wasm/dist/reader/zxing_reader.wasm','vendor/zxing_reader.wasm')\""
+  },
+  "devDependencies": {
+    "barcode-detector": "^3.2.2",
+    "esbuild": "^0.28.2",
+    "jsdom": "^29.1.1"
+  }
+}

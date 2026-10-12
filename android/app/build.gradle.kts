@@ -1,18 +1,20 @@
 plugins { id("com.android.application") }
 
-// A Trusted Web Activity: the APK opens https://mailadisin-hub.github.io/macros/
-// in Chrome, full screen. All app code lives in the web app; this is only the shell.
+// A standalone shell: its own WebView loads https://mailadisin-hub.github.io/macros/.
+// No Chrome or Google Play needed (Adi's phone blocks Chrome web-app installs).
+// All app code lives in the web app, so web changes need no new APK.
 android {
     namespace = "uk.adi.macros"
     compileSdk = 36
 
     defaultConfig {
         applicationId = "uk.adi.macros"
-        minSdk = 24
+        // 29: MediaStore Downloads for backup export without storage permission
+        minSdk = 29
         targetSdk = 36
         // Vellichor decides "update available" from versionCode: bump it on every shipped build.
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = 2
+        versionName = "2.0.0"
     }
 
     testOptions { unitTests { isIncludeAndroidResources = true; isReturnDefaultValues = true } }
@@ -24,7 +26,7 @@ android {
 }
 
 dependencies {
-    implementation("com.google.androidbrowserhelper:androidbrowserhelper:2.7.4")
+    implementation("androidx.core:core:1.13.1")
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.robolectric:robolectric:4.13")
     testImplementation("androidx.test:core:1.6.1")
