@@ -1,11 +1,10 @@
-# Builds the Macros Android shell (a Trusted Web Activity) and copies the APK to the
-# project root, where Vellichor's publish.ps1 can pick it up.
+# Builds the Macros Android shell (a standalone WebView around the live site) and copies
+# the APK to the project root, where Vellichor's publish.ps1 can pick it up.
 #
 #   powershell -ExecutionPolicy Bypass -File ./android/build-apk.ps1
 #
-# Debug-signed with ~/.android/debug.keystore. That key's SHA-256 is in
-# https://mailadisin-hub.github.io/.well-known/assetlinks.json - sign with any
-# other key and the app shows Chrome's address bar instead of running full screen.
+# Debug-signed with ~/.android/debug.keystore, the key every Vellichor app uses, so
+# updates install over the top.
 #
 # App changes need NO rebuild: the APK just opens the live site. Rebuild only to
 # change the icon, name or URL, and bump versionCode in app/build.gradle.kts.
@@ -22,7 +21,7 @@ if (-not $version) { throw "versionName not found" }
 
 Push-Location $root
 try {
-    .\gradlew.bat :app:assembleDebug --console=plain
+    .\gradlew.bat :app:testDebugUnitTest :app:assembleDebug --console=plain
     if ($LASTEXITCODE -ne 0) { throw "gradle build failed" }
 } finally { Pop-Location }
 
