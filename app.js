@@ -342,7 +342,7 @@ function renderSettings() {
       ${isInstalled() ? '' : `<section class="card stack">
         <h3>Install</h3>
         ${installPrompt ? `<button class="btn" id="install">Install app</button>`
-          : `<p class="muted" style="font-size:13.5px">Chrome menu ⋮ → <b>Add to home screen</b> → <b>Install</b>. If it isn't offered yet, tap around the app for 30 seconds and this turns into an Install button.</p>`}
+          : `<p class="muted" style="font-size:13.5px">Chrome menu ⋮ → <b>Install and create shortcut</b> → <b>Install</b>. If you installed the Macros APK, uninstall it first or Chrome won't offer this.</p>`}
         <p class="faint" style="font-size:12px" id="install-diag">Checking…</p>
       </section>`}
       <section class="card stack">

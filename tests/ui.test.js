@@ -507,7 +507,7 @@ test('everything persisted to localStorage', async () => {
 test('Install button appears when Chrome offers install, and triggers the prompt', async () => {
   w.matchMedia = () => ({ matches: false });
   await click('[data-view="settings"]');
-  assert.match(mainText(), /Add to home screen/);
+  assert.match(mainText(), /Install and create shortcut/);
   assert.ok(!$('#install'));
   let prompted = false;
   const ev = new w.Event('beforeinstallprompt', { cancelable: true });
