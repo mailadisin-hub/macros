@@ -578,3 +578,16 @@ test('in-app camera: live viewfinder, shutter captures a photo into the meal flo
   await closeSheet();
   delete navigator.mediaDevices;
 });
+
+test('API key is saved the moment it is pasted, without leaving the field', async () => {
+  store.ai.key = '';
+  await click('[data-view="settings"]');
+  const inp = $('#ai-key');
+  inp.value = 'sk-or-v1-pasted';
+  inp.dispatchEvent(new w.Event('input', { bubbles: true }));   // paste fires input, no blur/change
+  assert.equal(store.ai.key, 'sk-or-v1-pasted');
+  assert.equal(JSON.parse(w.localStorage.getItem('macros.v1')).ai.key, 'sk-or-v1-pasted', 'written to storage');
+  // and it survives a fresh render of Settings (what reopening the app does)
+  await click('[data-view="today"]'); await click('[data-view="settings"]');
+  assert.equal($('#ai-key').value, 'sk-or-v1-pasted');
+});

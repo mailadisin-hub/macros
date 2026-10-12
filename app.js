@@ -434,7 +434,11 @@ function renderSettings() {
     $('#ai-url-row').hidden = store.ai.provider !== 'custom';
     $('#ai-model').placeholder = PROVIDERS[store.ai.provider].model;
   };
-  ['#ai-key', '#ai-url', '#ai-model'].forEach(s => $(s).onchange = () => { saveAI(); toast('Saved'); });
+  // Save on every keystroke/paste, not on blur: closing the app straight after pasting must not lose the key.
+  ['#ai-key', '#ai-url', '#ai-model'].forEach(s => {
+    $(s).addEventListener('input', saveAI);
+    $(s).onchange = () => { saveAI(); toast('Saved'); };
+  });
   const keyHint = () => {
     const raw = $('#ai-key').value, k = raw.trim(), el = $('#key-hint');
     if (!k) { el.textContent = ''; return; }
